@@ -8,7 +8,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Chicago">
 <meta name="theme-color" content="#14161a">
-<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314161a'/><text x='16' y='22' font-family='Oswald,Arial,sans-serif' font-size='14' font-weight='600' fill='%23e7613f' text-anchor='middle'>RC</text></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%2314161a'/><text x='16' y='22' font-family='Oswald,Arial,sans-serif' font-size='14' font-weight='600' fill='%23B8404F' text-anchor='middle'>RC</text></svg>">
 <title>Chicago Training — Overlay Studio</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,7 +23,8 @@
     --ink: #f2f3f5;
     --muted: #9aa1ab;
     --faint: #6b727c;
-    --accent: #e7613f;
+    --accent: #B8404F;       /* mahogany, brightened for legibility on dark photos */
+    --brand-mahogany: #7D2935; /* true brand value (Option A palette) */
   }
   body {
     font-family: 'Inter', system-ui, sans-serif;
@@ -169,13 +170,23 @@
             <span>Show series tag</span>
           </div>
         </div>
-        <div class="field">
-          <label>Week–Day · top right</label>
-          <input type="text" id="f_week" value="01-01">
+        <div class="field row2">
+          <div>
+            <label>Week–Day · under title</label>
+            <input type="text" id="f_week" value="01-01">
+          </div>
+          <div>
+            <label>Session · doubles</label>
+            <input type="text" id="f_session" value="" placeholder="AM / PM">
+          </div>
         </div>
         <div class="field">
           <label>Run type</label>
           <input type="text" id="f_type" value="Long run">
+          <div class="toggle-row">
+            <input type="checkbox" id="f_key" checked>
+            <span>Key session — highlight (workouts &amp; long runs)</span>
+          </div>
         </div>
         <div class="field dist-row">
           <div>
@@ -197,10 +208,18 @@
             <input type="text" id="f_time" value="2:00:43">
           </div>
         </div>
+        <div class="field row2">
+          <div>
+            <label>Temp</label>
+            <input type="text" id="f_temp" value="77°F">
+          </div>
+          <div>
+            <label>Feels like</label>
+            <input type="text" id="f_feels" value="85°F">
+          </div>
+        </div>
         <div class="field">
-          <label>Conditions</label>
-          <input type="text" id="f_temp" value="77°F">
-          <div class="toggle-row">
+          <div class="toggle-row" style="margin-top:0;">
             <input type="checkbox" id="f_temp_on" checked>
             <span>Show conditions on frame</span>
           </div>
@@ -231,12 +250,12 @@
 
 <script>
 const presets = [
-  { type:'Long run',  dist:'16.25', pace:'7:26', time:'2:00:43', temp:'77°F', label:'Jun 27 · 16 mi easy' },
-  { type:'Long run',  dist:'15.05', pace:'7:33', time:'1:53:38', temp:'82°F', label:'Jun 19 · 15 mi' },
-  { type:'Workout',   dist:'8.72',  pace:'6:45', time:'58:47',   temp:'90°F', label:'Jun 24 · 4 mi steady' },
-  { type:'Intervals', dist:'6.01',  pace:'6:30', time:'39:01',   temp:'76°F', label:'Jun 17 · 3×1 mi' },
-  { type:'Trail run', dist:'8.54',  pace:'7:46', time:'1:06:21', temp:'93°F', label:'Jun 28 · trail' },
-  { type:'Easy',      dist:'9.01',  pace:'8:09', time:'1:13:28', temp:'91°F', label:'Jun 25 · easy' },
+  { type:'Long run',  dist:'16.25', pace:'7:26', time:'2:00:43', temp:'77°F', feels:'85°F',  key:true,  label:'Jun 27 · 16 mi long' },
+  { type:'Workout',   dist:'8.72',  pace:'6:45', time:'58:47',   temp:'90°F', feels:'103°F', key:true,  label:'Jun 24 · 4 mi steady' },
+  { type:'Long run',  dist:'15.05', pace:'7:33', time:'1:53:38', temp:'82°F', feels:'91°F',  key:true,  label:'Jun 19 · 15 mi' },
+  { type:'Trail run', dist:'8.54',  pace:'7:46', time:'1:06:21', temp:'93°F', feels:'101°F', key:false, label:'Jun 28 · trail' },
+  { type:'Recovery',  dist:'8.64',  pace:'8:04', time:'1:09:45', temp:'89°F', feels:'103°F', key:false, label:'Jun 18 · recovery' },
+  { type:'Easy',      dist:'3.00',  pace:'8:11', time:'24:35',   temp:'80°F', feels:'90°F',  key:false, session:'AM', label:'Jun 29 · AM double' },
 ];
 
 const $ = id => document.getElementById(id);
@@ -288,36 +307,42 @@ function render() {
   ctx.fillRect(0, 0, cw, ch);
 
   const x = 64;
+  const accent = '#B8404F';
   const series = $('f_series').value.trim();
   const showSeries = $('f_series_on').checked && series;
   const week = $('f_week').value.trim();
+  const session = $('f_session').value.trim();
   const type = $('f_type').value.trim().toUpperCase();
+  const isKey = $('f_key').checked;
   const dist = $('f_dist').value.trim();
   const unit = $('f_unit').value.trim().toUpperCase();
   const pace = $('f_pace').value.trim();
   const time = $('f_time').value.trim();
   const temp = $('f_temp').value.trim();
+  const feels = $('f_feels').value.trim();
   const showTemp = $('f_temp_on').checked && temp;
 
   ctx.textBaseline = 'top';
+  ctx.textAlign = 'left';
   ctx.shadowColor = 'rgba(0,0,0,0.5)';
   ctx.shadowBlur = 16;
 
+  let topY = 64;
   if (showSeries) {
-    ctx.textAlign = 'left';
-    ctx.fillStyle = 'rgba(255,255,255,0.95)';
+    ctx.fillStyle = 'rgba(255,255,255,0.96)';
     ctx.font = '500 30px Oswald';
     ctx.letterSpacing = '5px';
-    ctx.fillText(series.toUpperCase(), x, 64);
+    ctx.fillText(series.toUpperCase(), x, topY);
+    topY += 44;
   }
   if (week) {
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#ffffff';
-    ctx.font = '500 38px Oswald';
+    let wkText = 'Wk: ' + week;
+    if (session) wkText += '   ·   ' + session.toUpperCase();
+    ctx.fillStyle = 'rgba(255,255,255,0.82)';
+    ctx.font = '400 25px Oswald';
     ctx.letterSpacing = '3px';
-    ctx.fillText(week, 1080 - x, 60);
+    ctx.fillText(wkText, x, topY);
   }
-  ctx.textAlign = 'left';
   ctx.letterSpacing = '0px';
   ctx.shadowBlur = 0;
   ctx.shadowColor = 'transparent';
@@ -327,8 +352,13 @@ function render() {
   if (type) {
     ctx.font = '400 32px Oswald';
     ctx.letterSpacing = '7px';
-    ctx.fillStyle = 'rgba(255,255,255,0.86)';
+    ctx.fillStyle = isKey ? accent : 'rgba(255,255,255,0.86)';
     ctx.fillText(type, x, 1096);
+    if (isKey) {
+      ctx.letterSpacing = '0px';
+      ctx.fillStyle = accent;
+      ctx.fillRect(x, 1112, 54, 4);
+    }
   }
 
   if (dist) {
@@ -347,7 +377,11 @@ function render() {
   const parts = [];
   if (pace) parts.push(pace + ' /' + (unit || 'MI'));
   if (time) parts.push(time);
-  if (showTemp) parts.push(temp);
+  if (showTemp) {
+    let cond = temp;
+    if (feels) cond += ' (feels ' + feels + ')';
+    parts.push(cond);
+  }
   if (parts.length) {
     ctx.font = '300 34px Oswald';
     ctx.letterSpacing = '2px';
@@ -363,6 +397,9 @@ function applyPreset(p) {
   $('f_pace').value = p.pace;
   $('f_time').value = p.time;
   $('f_temp').value = p.temp;
+  $('f_feels').value = p.feels || '';
+  $('f_session').value = p.session || '';
+  $('f_key').checked = !!p.key;
   render();
 }
 
@@ -371,7 +408,7 @@ function buildPresets() {
   presets.forEach(p => {
     const b = document.createElement('button');
     b.className = 'preset';
-    b.innerHTML = '<div class="pt">' + p.type + '</div><div class="pd">' + p.label + '</div>';
+    b.innerHTML = '<div class="pt"' + (p.key ? ' style="color:#B8404F"' : '') + '>' + p.type + '</div><div class="pd">' + p.label + '</div>';
     b.onclick = () => applyPreset(p);
     wrap.appendChild(b);
   });
@@ -445,9 +482,10 @@ $('fileInput').addEventListener('change', e => {
 
 $('pickBtn').onclick = () => $('fileInput').click();
 $('posSlider').oninput = render;
-['f_series','f_week','f_type','f_dist','f_unit','f_pace','f_time','f_temp'].forEach(id => $(id).addEventListener('input', render));
+['f_series','f_week','f_session','f_type','f_dist','f_unit','f_pace','f_time','f_temp','f_feels'].forEach(id => $(id).addEventListener('input', render));
 $('f_temp_on').addEventListener('change', render);
 $('f_series_on').addEventListener('change', render);
+$('f_key').addEventListener('change', render);
 $('exportBtn').onclick = exportFrame;
 $('clearSet').onclick = clearSet;
 $('lbClose').onclick = closeLightbox;
