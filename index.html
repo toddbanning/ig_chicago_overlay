@@ -128,7 +128,7 @@ const ACCENT = '#B8404F', OFFWHITE = '#f2efe9';
 let fontsReady = false;
 
 const SAMPLE_WEEK = {
-  week:1, series:"Road to Chicago", blockWeeks:18,
+  week:1, series:"Road to Chicago", blockWeeks:15,
   cover:{ weekTotal:65.4, plan:66, nextPlan:78, history:[{wk:1,plan:66,actual:65.4}] },
   days:[
     {tag:"01-01",type:"Easy",key:false,double:true,strength:true,total:9.6,unit:"MI",
@@ -322,7 +322,7 @@ function renderCover(c){
   ctx.font='500 30px Oswald'; ctx.letterSpacing='4px'; ctx.textAlign='left';
   ctx.fillText((c.series||'Road to Chicago').toUpperCase(), 64, 64);
   ctx.font='400 28px Oswald'; ctx.letterSpacing='2px'; ctx.textAlign='right'; ctx.fillStyle='rgba(242,239,233,0.55)';
-  ctx.fillText('WK '+pad2(c.week)+' / '+(c.blockWeeks||18), 1080-64, 66);
+  ctx.fillText('WK '+pad2(c.week)+' / '+(c.blockWeeks||15), 1080-64, 66);
   ctx.textAlign='left';
   ctx.font='400 28px Oswald'; ctx.letterSpacing='4px'; ctx.fillStyle='rgba(242,239,233,0.62)';
   ctx.fillText('WEEK '+c.week+' · VOLUME', 64, 150);
