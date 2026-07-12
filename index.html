@@ -388,12 +388,16 @@ function drawChart(c){
   if(hist.length>=2){ ctx.strokeStyle=ACCENT; ctx.lineWidth=5; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.beginPath();
     hist.forEach((h,i)=>{ const px=xAt(h.wk), py=y(+h.actual); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke(); }
 
-  // dots + value label on EVERY week + week nums
+  // dots + value label on EVERY week (with clear-space plate so the line sits under it) + week nums
   ctx.textAlign='center';
   hist.forEach(h=>{ const px=xAt(h.wk), py=y(+h.actual), last=(h.wk===cur);
     ctx.fillStyle=ACCENT; ctx.beginPath(); ctx.arc(px,py,last?11:7,0,7); ctx.fill();
     if(last){ ctx.strokeStyle=ACCENT; ctx.globalAlpha=0.4; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(px,py,19,0,7); ctx.stroke(); ctx.globalAlpha=1; }
-    ctx.fillStyle=OFFWHITE; ctx.font=(last?'500 30px':'400 26px')+' Oswald'; ctx.fillText(fmtMi(h.actual), px, py-24);
+    const label=fmtMi(h.actual), fs=last?30:26, ly=py-(last?30:24);
+    ctx.font=(last?'500 ':'400 ')+fs+'px Oswald';
+    const tw=ctx.measureText(label).width;
+    ctx.fillStyle='#12151d'; roundRect(px-tw/2-11, ly-fs*0.80, tw+22, fs*1.05, 6); ctx.fill();
+    ctx.fillStyle=OFFWHITE; ctx.fillText(label, px, ly);
     ctx.fillStyle= last?'rgba(242,239,233,0.72)':'rgba(242,239,233,0.4)'; ctx.font='400 24px Oswald'; ctx.fillText(String(h.wk), px, BASE+42); });
   ctx.textAlign='left';
 }
