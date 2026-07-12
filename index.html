@@ -128,7 +128,7 @@ const ACCENT = '#B8404F', OFFWHITE = '#f2efe9';
 let fontsReady = false;
 
 const SAMPLE_WEEK = {
-  week:1, series:"Road to Chicago", blockWeeks:15,
+  week:1, series:"Road to Chicago", blockWeeks:18,
   cover:{ weekTotal:65.4, plan:66, nextPlan:78, history:[{wk:1,plan:66,actual:65.4}] },
   days:[
     {tag:"01-01",type:"Easy",key:false,double:true,strength:true,total:9.6,unit:"MI",
@@ -322,7 +322,7 @@ function renderCover(c){
   ctx.font='500 30px Oswald'; ctx.letterSpacing='4px'; ctx.textAlign='left';
   ctx.fillText((c.series||'Road to Chicago').toUpperCase(), 64, 64);
   ctx.font='400 28px Oswald'; ctx.letterSpacing='2px'; ctx.textAlign='right'; ctx.fillStyle='rgba(242,239,233,0.55)';
-  ctx.fillText('WK '+pad2(c.week)+' / '+(c.blockWeeks||15), 1080-64, 66);
+  ctx.fillText('WK '+pad2(c.week)+' / '+(c.blockWeeks||18), 1080-64, 66);
   ctx.textAlign='left';
   ctx.font='400 28px Oswald'; ctx.letterSpacing='4px'; ctx.fillStyle='rgba(242,239,233,0.62)';
   ctx.fillText('WEEK '+c.week+' · VOLUME', 64, 150);
@@ -356,12 +356,14 @@ function pad2(n){ n=parseInt(n)||0; return (n<10?'0':'')+n; }
 function drawChart(c){
   const hist=(c.history&&c.history.length)?c.history:[{wk:c.week,plan:c.plan,actual:c.weekTotal}];
   const L=96,R=984,BASE=1010,TOP=560;
+  const blockW=Math.max(2,(parseInt(c.blockWeeks)||15));
   let vals=[]; hist.forEach(h=>{ if(h.plan) vals.push(+h.plan); if(h.actual) vals.push(+h.actual); });
   let lo=Math.min.apply(null,vals), hi=Math.max.apply(null,vals);
   if(!isFinite(lo)){lo=0;hi=1;} lo-=4; hi+=4; if(hi<=lo) hi=lo+1;
   const y=v=> BASE-((v-lo)/(hi-lo))*(BASE-TOP);
-  const n=hist.length;
-  const xAt=i=> n===1 ? (L+R)/2 : L + i*(R-L)/(n-1);
+  const cur=parseInt(c.week);
+  // fixed spacing across the whole block: week 1 at left, filling rightward as weeks accrue
+  const xAt=wk=> L + ((Math.min(wk,blockW)-1)/(blockW-1))*(R-L);
 
   // legend
   ctx.textBaseline='middle'; ctx.textAlign='left';
@@ -375,23 +377,23 @@ function drawChart(c){
   ctx.strokeStyle='rgba(242,239,233,0.16)'; ctx.lineWidth=1; ctx.beginPath(); ctx.moveTo(L,BASE); ctx.lineTo(R,BASE); ctx.stroke();
 
   // plan ticks
-  hist.forEach((h,i)=>{ if(h.plan==null) return; const px=xAt(i), py=y(+h.plan);
+  hist.forEach(h=>{ if(h.plan==null) return; const px=xAt(h.wk), py=y(+h.plan);
     ctx.strokeStyle='rgba(242,239,233,0.5)'; ctx.lineWidth=3; ctx.beginPath(); ctx.moveTo(px-22,py); ctx.lineTo(px+22,py); ctx.stroke(); });
 
   // actual light stems
-  hist.forEach((h,i)=>{ if(h.actual==null) return; const px=xAt(i), py=y(+h.actual), last=i===n-1;
+  hist.forEach(h=>{ if(h.actual==null) return; const px=xAt(h.wk), py=y(+h.actual), last=(h.wk===cur);
     ctx.strokeStyle=ACCENT; ctx.globalAlpha=last?0.35:0.22; ctx.lineWidth=last?4:3; ctx.beginPath(); ctx.moveTo(px,BASE); ctx.lineTo(px,py); ctx.stroke(); ctx.globalAlpha=1; });
 
-  // connecting line
-  if(n>=2){ ctx.strokeStyle=ACCENT; ctx.lineWidth=5; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.beginPath();
-    hist.forEach((h,i)=>{ const px=xAt(i), py=y(+h.actual); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke(); }
+  // connecting line through actual points
+  if(hist.length>=2){ ctx.strokeStyle=ACCENT; ctx.lineWidth=5; ctx.lineJoin='round'; ctx.lineCap='round'; ctx.beginPath();
+    hist.forEach((h,i)=>{ const px=xAt(h.wk), py=y(+h.actual); i?ctx.lineTo(px,py):ctx.moveTo(px,py); }); ctx.stroke(); }
 
-  // dots + current label + week nums
+  // dots + value label on EVERY week + week nums
   ctx.textAlign='center';
-  hist.forEach((h,i)=>{ const px=xAt(i), py=y(+h.actual), last=i===n-1;
+  hist.forEach(h=>{ const px=xAt(h.wk), py=y(+h.actual), last=(h.wk===cur);
     ctx.fillStyle=ACCENT; ctx.beginPath(); ctx.arc(px,py,last?11:7,0,7); ctx.fill();
-    if(last){ ctx.strokeStyle=ACCENT; ctx.globalAlpha=0.4; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(px,py,19,0,7); ctx.stroke(); ctx.globalAlpha=1;
-      ctx.fillStyle=OFFWHITE; ctx.font='500 30px Oswald'; ctx.fillText(fmtMi(h.actual), px, py-26); }
+    if(last){ ctx.strokeStyle=ACCENT; ctx.globalAlpha=0.4; ctx.lineWidth=3; ctx.beginPath(); ctx.arc(px,py,19,0,7); ctx.stroke(); ctx.globalAlpha=1; }
+    ctx.fillStyle=OFFWHITE; ctx.font=(last?'500 30px':'400 26px')+' Oswald'; ctx.fillText(fmtMi(h.actual), px, py-24);
     ctx.fillStyle= last?'rgba(242,239,233,0.72)':'rgba(242,239,233,0.4)'; ctx.font='400 24px Oswald'; ctx.fillText(String(h.wk), px, BASE+42); });
   ctx.textAlign='left';
 }
